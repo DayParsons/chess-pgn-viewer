@@ -2,59 +2,384 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Chess PGN Viewer</title>
-  <!-- Use jsDelivr instead of unpkg -->
+  <title>Chess PGN Viewer with Database</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    :root {
+      --primary: #2c2c2c;
+      --secondary: #759656;
+      --highlight: #f8f8f8;
+    }
+    
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    
+    .container {
+      display: grid;
+      grid-template-columns: 1fr 300px;
+      gap: 20px;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .viewer-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .database-container {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
     #pgn-viewer {
       width: 100%;
-      height: 500px;
-      margin: 20px auto;
+      min-height: 500px;
+      margin-bottom: 20px;
     }
-    body {
-      max-width: 800px;
-      margin: 0 auto;
-      padding: 20px;
-      font-family: Arial, sans-serif;
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
     }
+    
+    button {
+      padding: 8px 15px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    
+    .btn-secondary {
+      background: var(--secondary);
+      color: white;
+    }
+    
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    
     textarea {
       width: 100%;
       height: 150px;
-      margin: 20px 0;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      resize: vertical;
+    }
+    
+    .game-list {
+      max-height: 500px;
+      overflow-y: auto;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    .game-item {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      cursor: pointer;
+    }
+    
+    .game-item:hover {
+      background-color: var(--highlight);
+    }
+    
+    .game-item.active {
+      background-color: #e6f2ff;
+    }
+    
+    .search-box {
+      width: 100%;
+      padding: 8px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      margin-bottom: 15px;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Chess PGN Viewer</h1>
-  <div id="pgn-viewer"></div>
-  <textarea id="pgn-input" placeholder="Paste PGN here">[Event "Test Game"]
-[Site "GitHub Pages"]
-[Date "2023.08.15"]
+  <div class="container">
+    <div class="viewer-container">
+      <h2><i class="fas fa-chess-board"></i> Chess Viewer</h2>
+      <div id="pgn-viewer"></div>
+      
+      <div class="controls">
+        <button id="load-btn" class="btn-primary">
+          <i class="fas fa-play"></i> Load PGN
+        </button>
+        <button id="prev-btn" class="btn-primary">
+          <i class="fas fa-step-backward"></i> Prev
+        </button>
+        <button id="next-btn" class="btn-primary">
+          <i class="fas fa-step-forward"></i> Next
+        </button>
+      </div>
+      
+      <textarea id="pgn-input" placeholder="Paste PGN here">[Event "Fischer vs Spassky"]
+[Site "Reykjavik ISL"]
+[Date "1972.07.11"]
+[Round "6"]
+[White "Fischer, Robert J."]
+[Black "Spassky, Boris V."]
 [Result "1-0"]
 
-1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 h6 10. d4 Re8 11. Nbd2 Bf8 12. Nf1 Bd7 13. Ng3 Na5 14. Bc2 c5 15. b3 Nc6 16. d5 Ne7 17. Be3 Ng6 18. Qd2 Nh7 19. a4 Nh4 20. Nxh4 Qxh4 21. Qe2 Qd8 22. b4 Qc7 23. Rec1 c4 24. Ra3 Rec8 25. Rca1 Qd8 26. f4 Nf6 27. fxe5 dxe5 28. Qf1 Nh7 29. Qf2 Ng5 30. Bxg5 hxg5 31. Qh2 Qe7 32. Qh6 f6 33. Rf1 Qf7 34. Rxf6 gxf6 35. Qxf6+ Qxf6 36. Rxf6 Kg7 37. Rxf8 Kxf8 38. axb5 axb5 39. Bxg8 Kxg8 40. dx6 1-0</textarea>
-  <button id="load-btn">Load PGN</button>
+1. c4 e6 2. Nf3 d5 3. d4 Nf6 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6 7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6 12. Qa4 c5 13. Qa3 Rc8 14. Bb5 a6 15. dxc5 bxc5 16. O-O Ra7 17. Be2 Nd7 18. Nd4 Qf8 19. Nxe6 fxe6 20. e4 d4 21. f4 Qe7 22. e5 Rb8 23. Bc4 Kh8 24. Qh3 Nf8 25. b3 a5 26. f5 exf5 27. Rxf5 Nh7 28. Rcf1 Qd8 29. Qg3 Re7 30. h4 Rbb7 31. e6 Rbc7 32. Qe5 Qe8 33. a4 Qd8 34. R1f2 Qe8 35. R2f3 Qd8 36. Bd3 Qe8 37. Qe4 Nf6 38. Rxf6 gxf6 39. Rxf6 Kg8 40. Bc4 Kh8 41. Qf4 1-0</textarea>
+    </div>
+    
+    <div class="database-container">
+      <h2><i class="fas fa-database"></i> Game Database</h2>
+      
+      <input type="text" id="search-box" class="search-box" placeholder="Search games...">
+      
+      <div class="game-list" id="game-list">
+        <!-- Games will be loaded here -->
+      </div>
+      
+      <div class="controls">
+        <button id="new-game-btn" class="btn-primary">
+          <i class="fas fa-plus"></i> New Game
+        </button>
+        <button id="save-game-btn" class="btn-primary">
+          <i class="fas fa-save"></i> Save Game
+        </button>
+        <button id="delete-game-btn" class="btn-secondary">
+          <i class="fas fa-trash"></i> Delete Game
+        </button>
+        <button id="export-pgn-btn" class="btn-secondary">
+          <i class="fas fa-download"></i> Export PGN
+        </button>
+      </div>
+    </div>
+  </div>
 
-  <!-- Use jsDelivr CDN -->
+  <!-- Lichess PGN Viewer from CDN -->
   <script src="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.min.js"></script>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize viewer with default PGN
+      // Initialize viewer
       const viewer = PgnViewer({
         boardName: "pgn-viewer",
-        pgn: document.getElementById('pgn-input').value,
+        pgn: '',
         pieceTheme: 'wikipedia',
         showCoordinates: true,
-        showPlayers: true
+        showPlayers: true,
+        showMoves: 'table'
       });
 
-      // Add load button functionality
+      // Database variables
+      let gamesDatabase = [];
+      let currentGameId = null;
+      let currentMoveIndex = 0;
+      let currentMoves = [];
+
+      // Load database from localStorage
+      function loadDatabase() {
+        const savedGames = localStorage.getItem('chessGamesDatabase');
+        if (savedGames) {
+          gamesDatabase = JSON.parse(savedGames);
+          renderGameList();
+        }
+      }
+
+      // Save database to localStorage
+      function saveDatabase() {
+        localStorage.setItem('chessGamesDatabase', JSON.stringify(gamesDatabase));
+      }
+
+      // Render game list
+      function renderGameList(filter = '') {
+        const gameList = document.getElementById('game-list');
+        gameList.innerHTML = '';
+        
+        const filteredGames = gamesDatabase.filter(game => {
+          const searchTerm = filter.toLowerCase();
+          return game.pgn.toLowerCase().includes(searchTerm) ||
+                 (game.metadata.Event && game.metadata.Event.toLowerCase().includes(searchTerm)) ||
+                 (game.metadata.White && game.metadata.White.toLowerCase().includes(searchTerm)) ||
+                 (game.metadata.Black && game.metadata.Black.toLowerCase().includes(searchTerm));
+        });
+        
+        if (filteredGames.length === 0) {
+          gameList.innerHTML = '<p>No games found</p>';
+          return;
+        }
+        
+        filteredGames.forEach(game => {
+          const gameItem = document.createElement('div');
+          gameItem.className = `game-item ${game.id === currentGameId ? 'active' : ''}`;
+          gameItem.dataset.id = game.id;
+          
+          let info = '';
+          if (game.metadata.Event) info += `<strong>${game.metadata.Event}</strong><br>`;
+          if (game.metadata.White && game.metadata.Black) {
+            info += `${game.metadata.White} vs ${game.metadata.Black}<br>`;
+          }
+          if (game.metadata.Date) info += `${game.metadata.Date}`;
+          if (game.metadata.Result) info += ` • ${game.metadata.Result}`;
+          
+          gameItem.innerHTML = info;
+          gameItem.addEventListener('click', () => loadGameFromDatabase(game.id));
+          
+          gameList.appendChild(gameItem);
+        });
+      }
+
+      // Load game from database
+      function loadGameFromDatabase(gameId) {
+        const gameData = gamesDatabase.find(g => g.id === gameId);
+        if (!gameData) return;
+        
+        document.getElementById('pgn-input').value = gameData.pgn;
+        viewer.setPgn(gameData.pgn);
+        currentGameId = gameId;
+        currentMoveIndex = 0;
+        
+        // Parse moves for navigation
+        const tempViewer = PgnViewer();
+        tempViewer.loadPgn(gameData.pgn);
+        currentMoves = tempViewer.getMoves();
+      }
+
+      // Save current game
+      function saveCurrentGame() {
+        const pgn = document.getElementById('pgn-input').value;
+        const tempViewer = PgnViewer();
+        
+        if (!tempViewer.loadPgn(pgn)) {
+          alert('Invalid PGN format');
+          return;
+        }
+        
+        const metadata = tempViewer.getMetadata();
+        
+        if (currentGameId) {
+          // Update existing game
+          const index = gamesDatabase.findIndex(g => g.id === currentGameId);
+          if (index !== -1) {
+            gamesDatabase[index] = {
+              id: currentGameId,
+              pgn,
+              metadata,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        } else {
+          // Add new game
+          const newGame = {
+            id: Date.now().toString(),
+            pgn,
+            metadata,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          gamesDatabase.push(newGame);
+          currentGameId = newGame.id;
+        }
+        
+        saveDatabase();
+        renderGameList(document.getElementById('search-box').value);
+      }
+
+      // Delete current game
+      function deleteCurrentGame() {
+        if (!currentGameId) return;
+        
+        if (confirm('Are you sure you want to delete this game?')) {
+          gamesDatabase = gamesDatabase.filter(g => g.id !== currentGameId);
+          saveDatabase();
+          currentGameId = null;
+          document.getElementById('pgn-input').value = '';
+          viewer.setPgn('');
+          renderGameList();
+        }
+      }
+
+      // Export PGN
+      function exportPGN() {
+        if (!currentGameId) return;
+        
+        const gameData = gamesDatabase.find(g => g.id === currentGameId);
+        if (!gameData) return;
+        
+        const blob = new Blob([gameData.pgn], {type: 'text/plain'});
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `chess_game_${currentGameId}.pgn`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      // Initialize
+      loadDatabase();
+      
+      // Event listeners
       document.getElementById('load-btn').addEventListener('click', function() {
         viewer.setPgn(document.getElementById('pgn-input').value);
+        currentMoveIndex = 0;
       });
       
-      console.log("Chess viewer initialized successfully!");
+      document.getElementById('prev-btn').addEventListener('click', function() {
+        if (currentMoveIndex > 0) {
+          currentMoveIndex--;
+          viewer.goToMove(currentMoveIndex);
+        }
+      });
+      
+      document.getElementById('next-btn').addEventListener('click', function() {
+        if (currentMoveIndex < currentMoves.length - 1) {
+          currentMoveIndex++;
+          viewer.goToMove(currentMoveIndex);
+        }
+      });
+      
+      document.getElementById('save-game-btn').addEventListener('click', saveCurrentGame);
+      document.getElementById('delete-game-btn').addEventListener('click', deleteCurrentGame);
+      document.getElementById('new-game-btn').addEventListener('click', function() {
+        document.getElementById('pgn-input').value = '';
+        viewer.setPgn('');
+        currentGameId = null;
+      });
+      
+      document.getElementById('export-pgn-btn').addEventListener('click', exportPGN);
+      
+      document.getElementById('search-box').addEventListener('input', function() {
+        renderGameList(this.value);
+      });
     });
   </script>
 </body>
