@@ -3,10 +3,12 @@
 <head>
   <meta charset="utf-8">
   <title>Chess PGN Viewer with Database</title>
-  <!-- Using jsDelivr CDN for reliability -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.css">
+  <!-- Using alternative CDN with correct MIME types -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js">
+  <link rel="stylesheet" href="https://unpkg.com/pgn-viewer@1.6.0/dist/pgn-viewer.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
+    /* All your existing CSS styles here */
     :root {
       --primary: #2c2c2c;
       --secondary: #759656;
@@ -132,7 +134,6 @@
   <div class="container">
     <div class="viewer-container">
       <h2><i class="fas fa-chess-board"></i> Chess Viewer</h2>
-      <!-- Board container must have this exact ID -->
       <div id="pgn-viewer"></div>
       
       <div class="controls">
@@ -184,18 +185,20 @@
     </div>
   </div>
 
-  <!-- Using jsDelivr CDN for reliability -->
-  <script src="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.min.js"></script>
+  <!-- Using alternative CDN with correct MIME types -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/chess.js/0.10.3/chess.min.js"></script>
+  <script src="https://unpkg.com/pgn-viewer@1.6.0/dist/pgn-viewer.min.js"></script>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
       // Initialize viewer with empty board
-      const viewer = PgnViewer({
+      const viewer = new PgnViewer({
         boardName: "pgn-viewer",
         pgn: '',
         pieceTheme: 'wikipedia',
         showCoordinates: true,
-        showPlayers: true
+        showPlayers: true,
+        showMoves: 'table'
       });
 
       // Database variables
@@ -218,6 +221,7 @@
           updateControls();
           return true;
         }
+        alert('Invalid PGN format');
         return false;
       }
 
