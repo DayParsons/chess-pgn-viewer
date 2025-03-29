@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Chess PGN Viewer with Database</title>
+  <!-- Using jsDelivr CDN for reliability -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -131,16 +132,17 @@
   <div class="container">
     <div class="viewer-container">
       <h2><i class="fas fa-chess-board"></i> Chess Viewer</h2>
+      <!-- Board container must have this exact ID -->
       <div id="pgn-viewer"></div>
       
       <div class="controls">
         <button id="load-btn" class="btn-primary">
           <i class="fas fa-play"></i> Load PGN
         </button>
-        <button id="prev-btn" class="btn-primary">
+        <button id="prev-btn" class="btn-primary" disabled>
           <i class="fas fa-step-backward"></i> Prev
         </button>
-        <button id="next-btn" class="btn-primary">
+        <button id="next-btn" class="btn-primary" disabled>
           <i class="fas fa-step-forward"></i> Next
         </button>
       </div>
@@ -162,48 +164,64 @@
       <input type="text" id="search-box" class="search-box" placeholder="Search games...">
       
       <div class="game-list" id="game-list">
-        <!-- Games will be loaded here -->
+        <!-- Games will load here -->
       </div>
       
       <div class="controls">
         <button id="new-game-btn" class="btn-primary">
           <i class="fas fa-plus"></i> New Game
         </button>
-        <button id="save-game-btn" class="btn-primary">
+        <button id="save-game-btn" class="btn-primary" disabled>
           <i class="fas fa-save"></i> Save Game
         </button>
-        <button id="delete-game-btn" class="btn-secondary">
+        <button id="delete-game-btn" class="btn-secondary" disabled>
           <i class="fas fa-trash"></i> Delete Game
         </button>
-        <button id="export-pgn-btn" class="btn-secondary">
+        <button id="export-pgn-btn" class="btn-secondary" disabled>
           <i class="fas fa-download"></i> Export PGN
         </button>
       </div>
     </div>
   </div>
 
-  <!-- Lichess PGN Viewer from CDN -->
+  <!-- Using jsDelivr CDN for reliability -->
   <script src="https://cdn.jsdelivr.net/npm/@lichess-org/pgn-viewer@1.6.0/dist/pgn-viewer.min.js"></script>
   
   <script>
     document.addEventListener('DOMContentLoaded', function() {
-      // Initialize viewer
+      // Initialize viewer with empty board
       const viewer = PgnViewer({
         boardName: "pgn-viewer",
         pgn: '',
         pieceTheme: 'wikipedia',
         showCoordinates: true,
-        showPlayers: true,
-        showMoves: 'table'
+        showPlayers: true
       });
 
       // Database variables
       let gamesDatabase = [];
       let currentGameId = null;
-      let currentMoveIndex = 0;
       let currentMoves = [];
+      let currentMoveIndex = 0;
+
+      // Load initial PGN from textarea
+      loadPgn(document.getElementById('pgn-input').value);
 
       // Load database from localStorage
+      loadDatabase();
+
+      // Main PGN loading function
+      function loadPgn(pgn) {
+        if (viewer.loadPgn(pgn)) {
+          currentMoves = viewer.getMoves();
+          currentMoveIndex = currentMoves.length - 1;
+          updateControls();
+          return true;
+        }
+        return false;
+      }
+
+      // Database functions
       function loadDatabase() {
         const savedGames = localStorage.getItem('chessGamesDatabase');
         if (savedGames) {
@@ -212,12 +230,10 @@
         }
       }
 
-      // Save database to localStorage
       function saveDatabase() {
         localStorage.setItem('chessGamesDatabase', JSON.stringify(gamesDatabase));
       }
 
-      // Render game list
       function renderGameList(filter = '') {
         const gameList = document.getElementById('game-list');
         gameList.innerHTML = '';
@@ -255,33 +271,25 @@
         });
       }
 
-      // Load game from database
       function loadGameFromDatabase(gameId) {
         const gameData = gamesDatabase.find(g => g.id === gameId);
         if (!gameData) return;
         
         document.getElementById('pgn-input').value = gameData.pgn;
-        viewer.setPgn(gameData.pgn);
-        currentGameId = gameId;
-        currentMoveIndex = 0;
-        
-        // Parse moves for navigation
-        const tempViewer = PgnViewer();
-        tempViewer.loadPgn(gameData.pgn);
-        currentMoves = tempViewer.getMoves();
+        if (loadPgn(gameData.pgn)) {
+          currentGameId = gameId;
+          updateControls();
+        }
       }
 
-      // Save current game
       function saveCurrentGame() {
         const pgn = document.getElementById('pgn-input').value;
-        const tempViewer = PgnViewer();
-        
-        if (!tempViewer.loadPgn(pgn)) {
+        if (!loadPgn(pgn)) {
           alert('Invalid PGN format');
           return;
         }
         
-        const metadata = tempViewer.getMetadata();
+        const metadata = viewer.getMetadata();
         
         if (currentGameId) {
           // Update existing game
@@ -309,9 +317,9 @@
         
         saveDatabase();
         renderGameList(document.getElementById('search-box').value);
+        updateControls();
       }
 
-      // Delete current game
       function deleteCurrentGame() {
         if (!currentGameId) return;
         
@@ -322,10 +330,10 @@
           document.getElementById('pgn-input').value = '';
           viewer.setPgn('');
           renderGameList();
+          updateControls();
         }
       }
 
-      // Export PGN
       function exportPGN() {
         if (!currentGameId) return;
         
@@ -344,19 +352,25 @@
         URL.revokeObjectURL(url);
       }
 
-      // Initialize
-      loadDatabase();
-      
+      function updateControls() {
+        const hasMoves = currentMoves.length > 0;
+        document.getElementById('prev-btn').disabled = currentMoveIndex <= 0;
+        document.getElementById('next-btn').disabled = currentMoveIndex >= currentMoves.length - 1;
+        document.getElementById('save-game-btn').disabled = !hasMoves;
+        document.getElementById('delete-game-btn').disabled = currentGameId === null;
+        document.getElementById('export-pgn-btn').disabled = currentGameId === null;
+      }
+
       // Event listeners
       document.getElementById('load-btn').addEventListener('click', function() {
-        viewer.setPgn(document.getElementById('pgn-input').value);
-        currentMoveIndex = 0;
+        loadPgn(document.getElementById('pgn-input').value);
       });
       
       document.getElementById('prev-btn').addEventListener('click', function() {
         if (currentMoveIndex > 0) {
           currentMoveIndex--;
           viewer.goToMove(currentMoveIndex);
+          updateControls();
         }
       });
       
@@ -364,18 +378,21 @@
         if (currentMoveIndex < currentMoves.length - 1) {
           currentMoveIndex++;
           viewer.goToMove(currentMoveIndex);
+          updateControls();
         }
       });
       
       document.getElementById('save-game-btn').addEventListener('click', saveCurrentGame);
       document.getElementById('delete-game-btn').addEventListener('click', deleteCurrentGame);
+      document.getElementById('export-pgn-btn').addEventListener('click', exportPGN);
       document.getElementById('new-game-btn').addEventListener('click', function() {
         document.getElementById('pgn-input').value = '';
         viewer.setPgn('');
         currentGameId = null;
+        currentMoves = [];
+        currentMoveIndex = 0;
+        updateControls();
       });
-      
-      document.getElementById('export-pgn-btn').addEventListener('click', exportPGN);
       
       document.getElementById('search-box').addEventListener('input', function() {
         renderGameList(this.value);
